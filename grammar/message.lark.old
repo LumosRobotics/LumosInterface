@@ -1,0 +1,105 @@
+?start: file
+
+?statement: import_stmt
+          | const_stmt
+          | enum_def
+          | bitfield_def
+          | struct_def
+          | interface_def
+          | COMMENT
+          | MULTILINE_COMMENT
+// ---------------------- Terminals ----------------------
+
+%import common.NEWLINE
+%import common.CNAME
+%import common.WS
+%import common.ESCAPED_STRING
+%import common.SIGNED_NUMBER
+%ignore WS
+
+COMMENT: /#[^\n]*/
+%ignore COMMENT
+
+IMPORT: "import"
+PATH: /\/[A-Za-z0-9_\/.]+/
+CONST: "const"
+STRUCT: "struct"
+INTERFACE: "interface"
+ENUM: "enum"
+BITFIELD: "bitfield"
+OPTIONAL: "optional"
+
+NUMBER: SIGNED_NUMBER
+STRING: ESCAPED_STRING
+
+MULTILINE_STRING: /\"\"\"(.|\n)*?\"\"\"/
+%ignore MULTILINE_STRING
+
+// ---------------------- Top Level ----------------------
+
+file: statement*
+
+?statement: import_stmt
+          | const_def
+          | enum_def
+          | bitfield_def
+          | struct_def
+          | interface_def
+
+// ---------------------- Import ----------------------
+
+import_stmt: IMPORT PATH NEWLINE
+
+// ---------------------- Const ----------------------
+
+const_def: CONST type CNAME "=" value NEWLINE
+
+// ---------------------- Enums ----------------------
+
+enum_def: ENUM CNAME NEWLINE enum_entry+
+enum_entry: CNAME "=" NUMBER NEWLINE
+
+// ---------------------- Bitfields ----------------------
+
+bitfield_def: BITFIELD CNAME ":" type NEWLINE bitfield_entry+
+bitfield_entry: CNAME "=" NUMBER NEWLINE
+
+// ---------------------- Structs ----------------------
+
+struct_def: attributes? STRUCT CNAME NEWLINE field+
+
+field: type CNAME array_spec? attributes? OPTIONAL? NEWLINE
+
+// ---------------------- Interfaces ----------------------
+
+interface_def: attributes? INTERFACE topic_path NEWLINE field+
+
+topic_path: "/" (CNAME "/")* CNAME
+
+// ---------------------- Types ----------------------
+
+?type: primitive_type
+     | CNAME                      // user-defined struct/enum
+     | CNAME "." CNAME            // imported qualified type
+
+primitive_type: "bool" | "float32" | "float64"
+              | "int8" | "int16" | "int32" | "int64"
+              | "uint8" | "uint16" | "uint32" | "uint64"
+
+// ---------------------- Arrays ----------------------
+
+array_spec: "[" NUMBER? "]"      // [size] or []
+
+// ---------------------- Values ----------------------
+
+?value: NUMBER -> number
+      | STRING -> string
+      | CNAME  -> const_ref
+
+// ---------------------- Attributes ----------------------
+
+attributes: "@" attribute (WS? "," WS? attribute)*
+
+attribute: CNAME "(" attribute_value ")"
+
+attribute_value: STRING | NUMBER | CNAME

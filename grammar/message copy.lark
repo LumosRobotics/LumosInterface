@@ -1,0 +1,53 @@
+// Terminals
+%import common.CNAME
+%import common.SIGNED_INT
+%import common.SIGNED_FLOAT
+%import common.NEWLINE
+%import common.WS
+%ignore WS
+
+// Comments
+COMMENT: /#[^\n]*/
+%ignore COMMENT
+
+// Start rule
+start: definition+
+
+// Top-level definitions
+definition: const_def
+          | enum_def
+          | struct_def
+          | interface_def
+
+// Constant definition (type must match value kind)
+const_def: "const" primitive_type CNAME "=" const_value NEWLINE
+
+// Constant value: int or float
+const_value: SIGNED_INT      -> int_const
+           | SIGNED_FLOAT    -> float_const
+
+// Enum definition
+enum_def: "enum" CNAME NEWLINE enum_entry+
+
+// Enum entry
+enum_entry: CNAME "=" SIGNED_INT NEWLINE
+
+// Struct definition
+struct_def: "struct" CNAME NEWLINE struct_field+
+
+// Interface definition
+interface_def: "interface" CNAME NEWLINE field+
+
+// Field in interface
+field: primitive_type CNAME NEWLINE
+     | CNAME CNAME NEWLINE     -> struct_or_enum_ref
+
+// Field in struct
+struct_field: primitive_type CNAME NEWLINE
+            | CNAME CNAME NEWLINE     -> struct_or_enum_ref
+
+// Primitive types
+primitive_type: "bool"
+              | "float32" | "float64"
+              | "int8" | "int16" | "int32" | "int64"
+              | "uint8" | "uint16" | "uint32" | "uint64"
