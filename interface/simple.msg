@@ -22,7 +22,8 @@ struct Position
     float64 lat
     float64 lon
     GpsFixStatus gps_fix_status
-    Vectord3 direction
+    non_existent_type val
+    common.geometry.Vector3 position
 
 # Interface
 interface GpsInfo
