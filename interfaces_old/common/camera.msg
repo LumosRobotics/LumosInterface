@@ -22,4 +22,5 @@ struct CameraInfo
 
 struct Image
     uint64 timestamp
-    uint8 data[] @unit("byte")
+    array<uint8, 3> data @unit("byte")
+    vector<uint8> data @unit("byte")

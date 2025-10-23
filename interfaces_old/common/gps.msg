@@ -6,4 +6,5 @@ struct GpsFix @rate_hz(10)
     float64 longitude    @unit("deg") @min(-180) @max(180)
     float32 altitude     @unit("m") @optional
     uint8 satellites     @max(MAX_SATELLITES)
+    repeated string providers
     GpsFixStatus status
