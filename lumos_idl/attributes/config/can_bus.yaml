@@ -1,0 +1,75 @@
+# CAN Bus Attribute Schema
+schema_name: can_bus
+version: "1.0"
+
+description: "Attributes for CAN bus signal encoding and message configuration"
+
+# Field-level attributes
+field_attributes:
+  can_signal:
+    type: object
+    required: false
+    description: "CAN signal encoding parameters"
+    properties:
+      min:
+        type: float
+        required: true
+        description: "Minimum physical value"
+      max:
+        type: float
+        required: true
+        description: "Maximum physical value"
+      scale:
+        type: float
+        required: true
+        description: "Scaling factor (physical = raw * scale + offset)"
+      offset:
+        type: float
+        required: false
+        default: 0.0
+        description: "Offset value"
+      unit:
+        type: string
+        required: false
+        description: "Physical unit (e.g., 'km/h', 'deg', 'C')"
+      byte_order:
+        type: string
+        required: false
+        default: "little_endian"
+        description: "Byte order for multi-byte values"
+        constraints:
+          enum: ["little_endian", "big_endian"]
+
+# Struct-level attributes
+struct_attributes:
+  can_message:
+    type: object
+    required: false
+    description: "CAN message configuration"
+    properties:
+      id:
+        type: integer
+        required: true
+        description: "CAN message ID (hex or decimal)"
+        constraints:
+          min: 0
+          max: 0x1FFFFFFF  # 29-bit extended CAN ID
+      cycle_time:
+        type: integer
+        required: false
+        description: "Message cycle time in milliseconds"
+        constraints:
+          min: 0
+      extended:
+        type: boolean
+        required: false
+        default: false
+        description: "Use extended 29-bit ID (otherwise standard 11-bit)"
+      dlc:
+        type: integer
+        required: false
+        default: 8
+        description: "Data length code (number of bytes)"
+        constraints:
+          min: 0
+          max: 8

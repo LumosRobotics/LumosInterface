@@ -1,3 +1,22 @@
+Metadata-Version: 2.4
+Name: lumos-idl
+Version: 0.1.0
+Summary: LumosInterface - A modern Interface Definition Language
+Author: Daniel Pi
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: lark>=1.1.0
+Requires-Dist: tomli>=2.0.0; python_version < "3.11"
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: mypy>=0.990; extra == "dev"
+Provides-Extra: save
+Requires-Dist: tomli-w>=1.0.0; extra == "save"
+
 # LumosInterface IDL
 
 A modern Interface Definition Language (IDL) for defining data structures and interfaces with support for multiple target languages.

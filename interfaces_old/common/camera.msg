@@ -5,7 +5,7 @@ enum CameraMode
     MONO = 1
     STEREO = 2
 
-bitfield CameraFlags: uint8
+bitfield CameraFlags : uint8
     HDR_ENABLED = 0
     AUTO_EXPOSURE = 1
     STABILIZED = 2

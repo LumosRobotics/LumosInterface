@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lumos-idl"
+version = "0.1.0"
+description = "LumosInterface - A modern Interface Definition Language"
+authors = [{name = "Daniel Pi"}]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = [
+    "lark>=1.1.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "mypy>=0.990",
+]
+save = [
+    "tomli-w>=1.0.0",
+]
+
+[project.scripts]
+lumos-idl = "lumos_idl.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lumos_idl*"]
+
+[tool.setuptools.package-data]
+lumos_idl = ["../grammar/*.lark", "attributes/config/*.yaml"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

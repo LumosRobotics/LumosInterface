@@ -1,0 +1,254 @@
+// LumosInterface Grammar Definition
+
+// ============================================================================
+// Terminals
+// ============================================================================
+
+%import common.NEWLINE
+%import common.WS
+%import common.CNAME
+%import common.SIGNED_INT
+%import common.SIGNED_FLOAT
+%import common.ESCAPED_STRING
+%ignore WS
+
+// Indentation markers (added by preprocessor)
+INDENT: "<INDENT>"
+DEDENT: "<DEDENT>"
+
+// Multiline string with triple quotes (higher priority than ESCAPED_STRING)
+MULTILINE_STRING.1: /"""(.|\n)*?"""/
+
+// Slash separator for import paths (higher priority than comment)
+SLASH.2: "/"
+
+// Dot for namespace qualification
+DOT: "."
+
+// Namespace separator (C++ style)
+NAMESPACE_SEP: "::"
+
+// At symbol for inline attributes
+AT: "@"
+
+// Primitive type keywords
+BOOL: "bool"
+FLOAT32: "float32"
+FLOAT64: "float64"
+INT8: "int8"
+INT16: "int16"
+INT32: "int32"
+INT64: "int64"
+UINT8: "uint8"
+UINT16: "uint16"
+UINT32: "uint32"
+UINT64: "uint64"
+
+// Boolean literals
+TRUE: "true"
+FALSE: "false"
+
+// Field modifier
+OPTIONAL: "optional"
+
+// Collection type keywords
+ARRAY: "array"
+MATRIX: "matrix"
+TENSOR: "tensor"
+
+// Type definition keywords
+STRUCT: "struct"
+INTERFACE: "interface"
+ENUM: "enum"
+
+// Special size markers
+MAX: "max"
+QUESTION_MARK: "?"
+
+// Comments
+COMMENT: /\/\/[^\n]*/
+MULTILINE_COMMENT: /\/\*(.|\n)*?\*\//
+%ignore COMMENT
+%ignore MULTILINE_COMMENT
+
+// ============================================================================
+// Start Rule
+// ============================================================================
+
+start: (import_stmt | using_namespace_stmt | namespace_alias_stmt | using_def | const_def | struct_def | interface_def | enum_def)*
+
+// ============================================================================
+// Import Statement
+// ============================================================================
+
+// Import format: import common/geometry
+// Resolves to: <base_path>/common/geometry.msg
+// No leading slash allowed
+// Segments can contain dots: common/geo.types
+import_stmt: "import" import_path NEWLINE
+
+// Import path: CNAME or CNAME.CNAME segments separated by /
+// Examples: geometry, geo.types, common/geometry, a.b/c.d
+import_path: path_segment (SLASH path_segment)*
+path_segment: CNAME (DOT CNAME)*
+
+// ============================================================================
+// Namespace Statements
+// ============================================================================
+
+// Using namespace statement: using namespace common::geometry
+// Makes all types from the namespace available without qualification
+using_namespace_stmt: "using" "namespace" qualified_namespace NEWLINE
+
+// Namespace alias: namespace cg = common::geometry
+// Creates a short alias for a namespace
+namespace_alias_stmt: "namespace" CNAME "=" qualified_namespace NEWLINE
+
+// Qualified namespace: common::geometry or common::geometry::types
+qualified_namespace: CNAME (NAMESPACE_SEP CNAME)*
+
+// ============================================================================
+// Type Alias Definition
+// ============================================================================
+
+// Type alias format: using <NewName> = <ExistingType>
+// Examples: using GPSCoordinate = float64
+//          using Timestamp = uint64
+//          using DeviceId = uint32
+using_def: "using" CNAME "=" primitive_type NEWLINE
+
+// ============================================================================
+// Constant Definition
+// ============================================================================
+
+// Constant format: const <type> <NAME> = <value>
+// Examples: const uint8 MAX_SIZE = 100
+//          const float32 PI = 3.14159
+const_def: "const" primitive_type CNAME "=" const_value NEWLINE
+
+// Constant values: integer or float literals
+const_value: SIGNED_INT      -> int_const
+           | SIGNED_FLOAT    -> float_const
+
+// ============================================================================
+// Struct Definition
+// ============================================================================
+
+// Struct format: struct <Name> with optional [attributes] block and fields
+// Example:
+//   struct Position
+//   <INDENT>
+//   [attributes]
+//   <INDENT>
+//   packed: true
+//   <DEDENT>
+//   float64 lat
+//   <INDENT>
+//   description: "Latitude"
+//   <DEDENT>
+//   <DEDENT>
+struct_def: STRUCT CNAME NEWLINE INDENT struct_body DEDENT
+
+// Interface definition (identical to struct, just different keyword)
+interface_def: INTERFACE CNAME NEWLINE INDENT struct_body DEDENT
+
+// ============================================================================
+// Enum Definition
+// ============================================================================
+
+// Enum format: enum <Name> [: <storage_type>]
+// Optional storage type defaults to int32
+// Example:
+//   enum Status
+//   <INDENT>
+//   OK = 0
+//   ERROR = 1
+//   <DEDENT>
+//
+//   enum TimingMode : uint32
+//   <INDENT>
+//   Auto = 0
+//   Manual = 1
+//   <DEDENT>
+enum_def: ENUM CNAME (":" primitive_type)? NEWLINE INDENT enum_body DEDENT
+
+enum_body: enum_member+
+
+// Enum member: NAME [= value]
+// If value is omitted, auto-increments from previous (or 0 for first)
+enum_member: CNAME ("=" SIGNED_INT)? NEWLINE
+
+struct_body: struct_attributes? struct_field+
+
+// Struct attributes block (optional)
+struct_attributes: "[" "attributes" "]" NEWLINE INDENT attribute_entry+ DEDENT
+
+// Attribute entry: key-value pair (value can be simple or nested object)
+attribute_entry: CNAME ":" simple_value NEWLINE              -> simple_attribute
+               | CNAME ":" NEWLINE INDENT attribute_entry+ DEDENT   -> object_attribute
+
+// Simple attribute values: boolean, number, or string
+simple_value: TRUE             -> bool_true
+            | FALSE            -> bool_false
+            | SIGNED_INT       -> int_value
+            | SIGNED_FLOAT     -> float_value
+            | MULTILINE_STRING -> multiline_string_value
+            | ESCAPED_STRING   -> string_value
+
+// Keep attribute_value for backward compatibility
+attribute_value: simple_value
+
+// Struct field: optional "optional" keyword, type, name, optional field number, and optional inline/indented attributes
+struct_field: OPTIONAL? primitive_type CNAME field_number? inline_attributes? NEWLINE field_attributes?
+            | OPTIONAL? collection_type CNAME field_number? inline_attributes? NEWLINE field_attributes? -> collection_type_field
+            | OPTIONAL? qualified_type CNAME field_number? inline_attributes? NEWLINE field_attributes?  -> qualified_type_field
+            | OPTIONAL? CNAME CNAME field_number? inline_attributes? NEWLINE field_attributes?           -> user_type_field
+
+// Field number: : <integer>
+field_number: ":" SIGNED_INT
+
+// Qualified type name: common::geometry::Vector3
+qualified_type: CNAME (NAMESPACE_SEP CNAME)+
+
+// Inline attributes: @name(value), @name(value)
+inline_attributes: inline_attribute ("," inline_attribute)*
+
+// Single inline attribute: @name(value)
+inline_attribute: AT CNAME "(" attribute_value ")"
+
+// Field attributes block (indented under field)
+field_attributes: INDENT attribute_entry+ DEDENT
+
+// ============================================================================
+// Common Rules
+// ============================================================================
+
+// Primitive types
+primitive_type: BOOL
+              | FLOAT32 | FLOAT64
+              | INT8 | INT16 | INT32 | INT64
+              | UINT8 | UINT16 | UINT32 | UINT64
+
+// Collection types (array, matrix, tensor)
+collection_type: array_type
+               | matrix_type
+               | tensor_type
+
+// Array: array<type> or array<type, size> or array<type, max=size>
+array_type: ARRAY "<" element_type ("," size_spec)? ">"
+
+// Matrix: matrix<type, rows, cols>
+matrix_type: MATRIX "<" element_type "," size_spec "," size_spec ">"
+
+// Tensor: tensor<type, dim1, dim2, ...>
+tensor_type: TENSOR "<" element_type ("," size_spec)+ ">"
+
+// Element type can be primitive or user-defined type
+element_type: primitive_type
+            | CNAME                          -> user_element_type
+            | qualified_type                 -> qualified_element_type
+
+// Size specification: fixed number, ?, or max=number
+size_spec: SIGNED_INT                        -> fixed_size
+         | QUESTION_MARK                     -> dynamic_size
+         | MAX "=" SIGNED_INT                -> max_size

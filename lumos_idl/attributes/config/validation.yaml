@@ -1,0 +1,105 @@
+# Validation Attribute Schema
+schema_name: validation
+version: "1.0"
+
+description: "Attributes for runtime validation and constraints"
+
+# Field-level attributes
+field_attributes:
+  range:
+    type: object
+    required: false
+    description: "Numeric range constraint"
+    properties:
+      min:
+        type: number
+        required: true
+        description: "Minimum allowed value (inclusive)"
+      max:
+        type: number
+        required: true
+        description: "Maximum allowed value (inclusive)"
+
+  pattern:
+    type: string
+    required: false
+    description: "Regex pattern for string validation"
+
+  length:
+    type: object
+    required: false
+    description: "Length constraint for strings and arrays"
+    properties:
+      min:
+        type: integer
+        required: false
+        description: "Minimum length"
+        constraints:
+          min: 0
+      max:
+        type: integer
+        required: false
+        description: "Maximum length"
+        constraints:
+          min: 0
+
+  units:
+    type: string
+    required: false
+    description: "Physical units (for documentation and validation)"
+
+  description:
+    type: string
+    required: false
+    description: "Human-readable field description"
+
+  deprecated:
+    type: boolean
+    required: false
+    default: false
+    description: "Mark field as deprecated"
+
+  default:
+    type: [string, number, boolean]
+    required: false
+    description: "Default value for optional fields"
+
+# Struct-level attributes
+struct_attributes:
+  deprecated:
+    type: boolean
+    required: false
+    default: false
+    description: "Mark entire struct as deprecated"
+
+  packed:
+    type: boolean
+    required: false
+    default: false
+    description: "Use packed memory layout (no padding)"
+
+  align:
+    type: integer
+    required: false
+    description: "Memory alignment in bytes"
+    constraints:
+      enum: [1, 2, 4, 8, 16, 32, 64]
+
+  version:
+    type: string
+    required: false
+    description: "Version identifier for this struct"
+
+# Enum-level attributes
+enum_attributes:
+  deprecated:
+    type: boolean
+    required: false
+    default: false
+    description: "Mark enum as deprecated"
+
+  flags:
+    type: boolean
+    required: false
+    default: false
+    description: "Enum represents bit flags (values should be powers of 2)"

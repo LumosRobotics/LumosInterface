@@ -1,0 +1,2 @@
+[console_scripts]
+lumos-idl = lumos_idl.__main__:main
